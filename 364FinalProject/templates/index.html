@@ -1,0 +1,11 @@
+{% if current_user.is_authenticated %}
+	<a href="{{url_for('logout') }}" > Sign out from your Movie Watcher Account {{current_user.username}}</a>
+	
+	<a href = "{{url_for('mainform') }}" > Continue to Your Movie Watcher Home Page.
+
+
+{% else %}
+<a href="{{url_for('login') }}" > Sign into your Movie Watcher Account </a>
+{% endif %}
+
+

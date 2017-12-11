@@ -1,0 +1,28 @@
+<h1> Welcome!  </h1>
+
+<div>
+{% for message in get_flashed_messages() %}
+{{message}}
+{% endfor %}
+</div>
+
+</div>
+<p> <a href = "{{ url_for('see_all_movies') }}" > See movies you have seen. </a> <p>
+<p> <a href = "{{url_for('unseen_movies') }}"> Movies you have not yet seen.
+</p>
+<p> <a href = "{{ url_for('hot_movies') }}"> This week's hot movies. </a> <p>
+<p> <a href = "{{ url_for('see_all_directors') }}"> See your list of directors. </a> </p>
+
+<form method ="POST">
+	{{ form.hidden_tag() }}
+	{{ form.title.label}} {{ form.title() }}
+	{{ form.director.label }} {{ form.director() }}
+	
+	{{ form.year.label }} {{ form.year() }}
+	{{ form.rating.label }} {{ form.rating () }}
+	{{ form.viewed.label }} {{form.viewed() }}
+	{{ form.actors.label }} {{ form.actors() }} 
+	{{form.submit.label }} {{form.submit() }}
+<img src = "/static/Uknown.png"> 
+</form>
+

@@ -1,0 +1,8 @@
+<ul> {% for mov in all_movies %}
+<li>{{ mov[0 ]}} directed by {{ mov[1] }} in {{ mov [4] }} and received a rating of {{ mov[3] }}. </li>
+<br>
+<br>
+</ul>
+
+{% if not all_movies %}
+You have not saved any movies yet. Please return to the <a href="{{url_for('mainform')}}"> main screen to add a movie </a>

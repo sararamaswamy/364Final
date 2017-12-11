@@ -1,0 +1,6 @@
+<h1> You have seen movies by {{num_directors}} directors. Rack em' up! </h1>
+<ul>
+{% for dir in all_directors %}
+{{ dir }}
+<br>
+{% endfor %}

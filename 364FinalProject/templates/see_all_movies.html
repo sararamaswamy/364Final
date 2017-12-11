@@ -1,0 +1,14 @@
+<h2> You have seen {{num_movies}} movies total. </h2> 
+<ul> {% for mov in all_movies %}
+<li>{{ mov[0 ]}} was released in {{ mov [2] }} and received a rating of {{ mov[1] }}. 
+You have seen this movie.
+ </li>
+<br>
+
+<br>
+{% endfor %}
+</ul>
+
+{% if not all_movies %}
+You have not saved any movies yet. Please return to the <a href="{{url_for('mainform')}}"> main screen to add a movie </a>
+{% endif %}

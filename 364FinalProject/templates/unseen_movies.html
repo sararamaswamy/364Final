@@ -1,0 +1,17 @@
+<h2> You have yet to see {{num_movies}} movies total. </h2> 
+<ul> {% for mov in all_movies %}
+<li>{{ mov[0 ]}} was released in {{ mov [2] }} and received a rating of {{ mov[1] }}. 
+You have not seen this movie!
+</li>
+
+<br>
+
+
+<br>
+{% endfor %}
+Head to <a href = "https://www.fandango.com"> Fandango to check what's available in theaters!
+</ul>
+
+{% if not all_movies %}
+You have seen all the movies in your list or have not yet saved any! Please return to the <a href="{{url_for('mainform')}}"> main screen. </a>
+{% endif %}
