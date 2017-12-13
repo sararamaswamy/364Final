@@ -28,6 +28,7 @@ app.config['SECRET_KEY'] = 'hardtoguessstring'
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/sararamaFinal"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['HEROKU_ON'] = os.environ.get('HEROKU')
 mail = Mail(app)
 
 app.config['MAIL_SERVER'] = 'smtp.googleemail.com'
