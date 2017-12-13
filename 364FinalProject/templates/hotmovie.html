@@ -1,9 +1,23 @@
-<h1> A tidbit about {{ info["original_title"] }} </h1>
+<h1> A tidbit about {{ info["Title"] }} </h1>
 
 
 <ul>
-	{{ info["overview"] }}
-	{{ info["release_date"] }}
+	Directed by: {{ info["Director"] }}
+	<br>
+	<br>
+	Actors in {{ info["Title"] }}: {{ info["Actors"] }}
+	<br>
+	<br>
+	Released in:
+	{{ info["Year"] }}
+	<br>
+	<br>
+	Received a rating of: {{ info["imdbRating"] }}
+	<br>
+	<br>
+	Plot: {{ info["Plot"] }}
+	<br>
+	<br>
 
 </ul>
 

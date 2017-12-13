@@ -8,21 +8,36 @@
 
 </div>
 <p> <a href = "{{ url_for('see_all_movies') }}" > See movies you have seen. </a> <p>
-<p> <a href = "{{url_for('unseen_movies') }}"> Movies you have not yet seen.
+<p> <a href = "{{ url_for('unseen_movies') }}"> Movies you have not yet seen.
 </p>
-<p> <a href = "{{ url_for('hot_movies') }}"> This week's hot movies. </a> <p>
+<p> <a href = "{{ url_for('test_route') }}"> This week's hot movies. </a> <p>
 <p> <a href = "{{ url_for('see_all_directors') }}"> See your list of directors. </a> </p>
 
 <form method ="POST">
 	{{ form.hidden_tag() }}
+	<br>
+	<br>
 	{{ form.title.label}} {{ form.title() }}
+	<br>
+	<br>
 	{{ form.director.label }} {{ form.director() }}
-	
+	<br>
+	<br>
 	{{ form.year.label }} {{ form.year() }}
+	<br>
+	<br>
 	{{ form.rating.label }} {{ form.rating () }}
+	<br>
+	<br>
 	{{ form.viewed.label }} {{form.viewed() }}
+	<br>
+	<br>
 	{{ form.actors.label }} {{ form.actors() }} 
+	<br>
+	<br>
 	{{form.submit.label }} {{form.submit() }}
-<img src = "/static/Uknown.png"> 
+	<br>
+	<br>
+<img src = "/static/Unknown.png"> 
 </form>
 

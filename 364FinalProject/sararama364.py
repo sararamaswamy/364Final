@@ -1,6 +1,8 @@
 import os
+import unittest
 from flask import Flask, render_template, session, redirect, request, url_for, flash
-
+import requests
+import json
 from flask_script import Manager, Shell
 
 # New imports were needed for additional stuff for login
@@ -69,7 +71,7 @@ def send_email(to, subject, template, **kwargs):
 
 ##Association tables 
 ## Users and Movies
-usermovies = db.Table('usermovies', db.Column('user_id', db.Integer, db.ForeignKey('users.id')), db.Column('movie_id', db.Integer, db.ForeignKey('movies.id')))
+# usermovies = db.Table('usermovies', db.Column('user_id', db.Integer, db.ForeignKey('users.id')), db.Column('movie_id', db.Integer, db.ForeignKey('movies.id')))
 
 #association Table between songs and playlists
 # on_playlist = db.Table('on_playlist',db.Column('user_id', db.Integer, db.ForeignKey('songs.id')),db.Column('playlist_id',db.Integer, db.ForeignKey('playlists.id')))
@@ -92,7 +94,7 @@ class User(UserMixin, db.Model):
 	username = db.Column(db.String(255), unique = True, index = True)
 	email = db.Column(db.String(64), unique = True, index = True)
 	password_hash = db.Column(db.String(128))
-	movies = db.relationship("Movie", secondary = usermovies, backref=db.backref('users', lazy='dynamic'), lazy='dynamic')
+	# movies = db.relationship("Movie", secondary = usermovies, backref=db.backref('users', lazy='dynamic'), lazy='dynamic')
 
 	@property
 	def password(self):
@@ -133,6 +135,10 @@ class Movie(db.Model):
 	year = db.Column(db.String(255))
 	viewed = db.Column(db.String(255))
 	user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+	def __repr__(self):
+		return "{} with actors: {} and a rating of: {}, made in year:{}. SEEN: {}".format(self.title, self.actors, self.rating, self.year, self.viewed)
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -195,8 +201,8 @@ def get_or_create_actor(db_session, actor):
 	db_session.commit()
 	return actor_tuple
 
-def get_or_create_movie(db_session, title, director, year , rating , viewed, actors_list = [] ):
-	movie = db_session.query(Movie).filter_by(title = title).first()
+def get_or_create_movie(db_session, title, director, year , rating , viewed, current_user, actors_list = [] ):
+	movie = db_session.query(Movie).filter_by(title = title, user_id = current_user.id).first()
 	if movie:  
 		return movie
 	else:
@@ -205,6 +211,7 @@ def get_or_create_movie(db_session, title, director, year , rating , viewed, act
 		## ask about 165
 		new_director = get_or_create_director(db_session, director)
 		movie.director_id = new_director.id
+		movie.user_id = current_user.id
 		# print(title)
 		# print(director)
 		# print(year)
@@ -230,9 +237,11 @@ def get_or_create_movie(db_session, title, director, year , rating , viewed, act
 #get_or_Create_actor
 
 
+#View Function 1
 @app.route('/mainform', methods=['GET', 'POST'])
 def mainform():
 	movies = Movie.query.all()
+
 	num_movies = len(movies)
 	form = MovieForm()
 	if form.validate_on_submit():
@@ -242,10 +251,11 @@ def mainform():
 			x = form.actors.data
 			actors_list = x.split(",")
 			print(actors_list)
-			get_or_create_movie(db.session, form.title.data, form.director.data, form.year.data, form.rating.data, form.viewed.data, actors_list)
+			get_or_create_movie(db.session, form.title.data, form.director.data, form.year.data, form.rating.data, form.viewed.data, current_user, actors_list)
 			return redirect(url_for('see_all_movies'))
 	return render_template('mainform.html', form=form, num_movies = num_movies)
 
+#View Function 2
 @app.route('/see_all_movies')
 def see_all_movies():
 	all_movies = []
@@ -266,6 +276,7 @@ def see_all_movies():
 		# print(all_movies)
 	return render_template('see_all_movies.html', all_movies = all_movies, num_movies = num_movies)
 
+# View Function 3
 @app.route('/unseen_movies')
 def unseen_movies():
 	unseen = []
@@ -280,6 +291,7 @@ def unseen_movies():
 		unseen.append(movie_tuple)
 	return render_template('unseen_movies.html', all_movies = unseen, num_movies = num_movies)
 
+## View Function 4
 @app.route('/see_all_directors')
 def see_all_directors():
 	all_directors = []
@@ -291,6 +303,7 @@ def see_all_directors():
 		all_directors.append(director_tuple)
 	return render_template('see_all_directors.html', all_directors = all_directors, num_directors = num_directors)
 
+## View Function 5
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
@@ -369,23 +382,51 @@ def secret():
 # 		print(r)
 # 		return render_template('hotmovie.html', info = data_return)
 
-
+## View Function 6
 @app.route('/movies', methods = ['POST,' 'GET'])
 def hot_movies():
-	return render_template('hotmoviesform.html')
+	# return render_template('hotmoviesform.html')
+	return "hello"
 
-@app.route('/movie/<movietitle>', methods = ['POST', 'GET'])
+## View Function 7
+@app.route('/movies/<movietitle>', methods = ['POST', 'GET'])
 def hot_movie(movietitle):
-	if request.method == 'GET' or request.method== 'POST':
+	if request.method == 'GET':
 		result = request.args
 		params = {}
 		params['t'] = movietitle
-		resp = requests.get('https://api.themoviedb.org/3/movie/550?api_key=a1340ab54960df121c876f6de730fc2d', params = params)
+		resp = requests.get('http://www.omdbapi.com/?apikey=91f54722&', params = params)
 		data_return = json.loads(resp.text)
-		r = json.dumps(data_return, indent = 2)
+		r= json.dumps(data_return, indent = 2)
+
+		# params['original_title'] = movietitle
+		# resp = requests.get('https://api.themoviedb.org/3/movie/550?api_key=a1340ab54960df121c876f6de730fc2d', params = params)
+		# data_return = json.loads(resp.text)
+		# r = json.dumps(data_return, indent = 2)
 		return render_template('hotmovie.html', info = data_return)
+
+@app.route('/test_route')
+def test_route():
+	return render_template("hotmoviesform.html")
 ## to do:
 ## arguments for the get_or_create functions
+
+
+##Unit Testing
+# class TestCase(unittest.TestCase):
+#     def setUp(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/sararamaFinal"
+#         self.app = app.test_client()
+#         db.create_all()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+
+
 
 
 if __name__ == '__main__':
