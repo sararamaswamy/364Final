@@ -20,6 +20,7 @@ from flask_mail import Mail, Message
 from threading import Thread
 
 
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
@@ -29,24 +30,24 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postg
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['HEROKU_ON'] = os.environ.get('HEROKU')
-mail = Mail(app)
 
-app.config['MAIL_SERVER'] = 'smtp.googleemail.com'
+
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
 app.config['MAIL_PORT'] = 587 #default
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME') # TODO export to your environs -- may want a new account just for this. It's expecting gmail, not umich
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_SUBJECT_PREFIX'] = '[Tweet App]' 
-app.config['MAIL_SENDER'] = 'Admin <solivia965@gmail.com>'
-app.config['ADMIN'] = os.environ.get('ADMIN')
-
+app.config['MAIL_SUBJECT_PREFIX'] = '[Movie App]' 
+app.config['MAIL_SENDER'] = 'ADMIN <solivia965@gmail.com>'
+app.config['ADMIN'] = os.environ.get('ADMIN') or "solivia965@gmail.com"
+# mail = Mail(app)
 
 manager = Manager(app)
 db = SQLAlchemy(app) 
 migrate = Migrate(app, db)
 manager.add_command('db', MigrateCommand)
 
-# mail = Mail(app)
+mail = Mail(app)
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
@@ -59,16 +60,57 @@ def make_shell_context():
 
 manager.add_command("shell", Shell(make_context=make_shell_context))
 
-def send_timely_email(app, message):
-	with app.app_context():
-		mail.send(message)
+# def send_async_email(app, msg):
+# 	with app.app_context():
+# 		mail.send(msg)
 
-def send_email(to, subject, template, **kwargs):
-	message = Message(app.config['MAIL_SUBJECT_PREFIX'] + ' ' + subject, send = app.config['MAIL_SENDER'], recipients=[to])
-	message.body = render_template(template + '.txt', **kwargs)
-	message.html = render_template(template + '.html', **kwargs)
-	thr = Thread(target=send_timely_email, args=[app, message])
-	return thr
+
+# def send_async_email(app, msg):
+# ## takes message object. using app_context function, says use mail application to send the message. won't slow things or blank out application. 
+#     with app.app_context():
+#         mail.send(msg)
+
+# def send_email(to, subject, template, **kwargs): # kwargs = 'keyword arguments', this syntax means to unpack any keyword arguments into the function in the invocation...
+#     msg = Message(app.config['MAIL_SUBJECT_PREFIX'] + ' ' + subject, 
+#     ## value of sender is MAIL_SENDER but default is the application sender of mail, and it puts your recipients in a list. 
+#     ## you have this messae instance. can add attribute message body
+#                   sender=app.config['MAIL_SENDER'], recipients=[to])
+#     ## text version
+#     msg.body = render_template(template + '.txt', **kwargs)
+#     ## html version
+#     msg.html = render_template(template + '.html', **kwargs)
+#     ## just make sure you're adding the right thing to the right thing 
+#     ## doing this asynchronously, keep itin the background, send asap,, not stop everything to send
+#     thr = Thread(target=send_async_email, args=[app, msg]) # using the async email to make sure the email sending doesn't take up all the "app energy" -- the main thread -- at once
+#     thr.start()
+#     return thr
+
+# def send_email(to, subject, template, **kwargs):
+# 	message = Message(app.config['MAIL_SUBJECT_PREFIX'] + ' ' + subject, sender=app.config['MAIL_SENDER'], recipients=[to])
+# 	message.body = render_template(template + '.txt', **kwargs)
+# 	message.html = render_template(template + '.html', **kwargs)
+# 	thr = Thread(target=send_async_email, args=[app, message])
+# 	return thr
+
+def send_async_email(app, msg):
+## takes message object. using app_context function, says use mail application to send the message. won't slow things or blank out application. 
+    with app.app_context():
+        mail.send(msg)
+
+def send_email(to, subject, template, **kwargs): # kwargs = 'keyword arguments', this syntax means to unpack any keyword arguments into the function in the invocation...
+    msg = Message(app.config['MAIL_SUBJECT_PREFIX'] + ' ' + subject, 
+    ## value of sender is MAIL_SENDER but default is the application sender of mail, and it puts your recipients in a list. 
+    ## you have this messae instance. can add attribute message body
+                  sender=app.config['MAIL_SENDER'], recipients=[to])
+    ## text version
+    msg.body = render_template(template + '.txt', **kwargs)
+    ## html version
+    msg.html = render_template(template + '.html', **kwargs)
+    ## just make sure you're adding the right thing to the right thing 
+    ## doing this asynchronously, keep itin the background, send asap,, not stop everything to send
+    thr = Thread(target=send_async_email, args=[app, msg]) # using the async email to make sure the email sending doesn't take up all the "app energy" -- the main thread -- at once
+    thr.start()
+    return thr # The thread being returned
 
 ##Association tables 
 ## Users and Movies
@@ -224,6 +266,8 @@ def get_or_create_movie(db_session, title, director, year , rating , viewed, cur
 			actor = get_or_create_actor(db_session, actor)
 			movie.actors.append(actor)
 			print(actor.id)
+		print(os.environ.get('MAIL_USERNAME'))
+		send_email(os.environ.get('MAIL_USERNAME'), "New Movie", 'mail/new_account', hello = "Congrats!")
 			# movie.actor_id.append(actor.id)
 		db_session.add(movie)
 		db_session.commit()
@@ -344,14 +388,21 @@ def logout():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(email=form.email.data,username=form.username.data,password=form.password.data)
-        congrats = "Congratulations on joining Movie Watcher Lite by Sara Ramaswamy"
-        send_email(form.email.data, 'New Account', 'mail/new_account', congrats)
-        db.session.add(user)
-        db.session.commit()
-        flash('You can now log in!')
-        return redirect(url_for('login'))
-    return render_template('register.html',form=form)
+    	if db.session.query(User).filter_by(email=form.username.data).first():
+    		flash("You already have an account")
+    	else:
+    		congrats = "Congrats on a new Movie Watching Membership!"
+    		user = User(email=form.email.data,username=form.username.data,password=form.password.data)  
+    		db.session.add(user)
+    		db.session.commit()
+    		flash('You can now log in!')
+    	return redirect(url_for('login'))
+    return render_template('register.html', form=form)
+    #     		db.session.add(user)
+    #     		db.session.commit()
+    #     		flash('You can now log in!')
+    # 	return redirect(url_for('login'))
+    # return render_template('register.html',form=form)
 
 ## Main routes
 
